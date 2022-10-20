@@ -17,13 +17,14 @@ export class CardDeck {
 
   generate_deck() {
     console.log('Generating deck...')
-    for (let i = 0; i < this.types.length; i++) {
-      for (let j = 0; j < this.values.length; j++) {
-        // let card = `${card_types[i]} ${cards_values[j].card}`
-        let card = new Card(this.types[i], this.values[j])
+
+    this.types.forEach((type) => {
+      this.values.forEach((value) => {
+        let card = new Card(type, value)
         this.deck.push(card)
-      }
-    }
+      })
+    })
+
     return this.deck
   }
 
@@ -45,13 +46,13 @@ export class CardDeck {
   }
 
   return_card(card) {
-    // console.log(card)
     let c_index = this.drawn_cards.findIndex((c) => c === card)
     let returned_card = this.drawn_cards.splice(c_index)
-    // console.log(returned_card)
+
     this.deck.push(returned_card[0])
   }
 }
+
 export class Card {
   constructor(type = '', rank = '') {
     this.rank = rank
@@ -65,28 +66,19 @@ export class Card {
 
   get_value() {
     if (this.hidden) return 0
-    // TODO: Kings Queens Jacks Ace - don't return correct values
-    switch (this.rank) {
-      case 'A':
-        return 11
-        break
-      case 'J':
-        return 10
-        break
-      case 'K':
-        return 10
-        break
-      case 'Q':
-        return 10
-        break
-      default:
-        let r = parseInt(this.rank)
-        if (isNaN(r)) {
-          return this.rank
-        } else {
-          return r
-        }
-    }
+  
+    let r = parseInt(this.rank)
+
+    const is_ace = (r) => r === 'A'
+    const is_J_K_Q = (r) => r === 'J' || r === 'K' || r === 'Q'
+
+    if (is_ace(this.rank)) return 11
+
+    if (is_J_K_Q(this.rank)) return 10
+
+    if (isNaN(r)) return this.rank
+    
+    return r
   }
 }
 
@@ -127,6 +119,10 @@ export class Player {
     return this.hand.points_for()
   }
 
+  get card_names() {
+    return this.hand.names()
+  }
+
   draw_cards(amount) {
     let picked_up = 0
     while (picked_up < amount) {
@@ -137,16 +133,15 @@ export class Player {
 }
 
 export class BlackJack {
-  constructor(dealers_name = 'John', players = []) {
+  constructor(dealers_name = 'John', players = [], l_msg = 'You lose!', t_msg = 'You win!', w_msg = 'Draw!') {
     this.players = players
     this.playing = false
     this.deck = new CardDeck()
     this.dealer_name = dealers_name
+    this.LOSE_MESSAGE = l_msg
+    this.WIN_MESSAGE = t_msg
+    this.DRAW_MESSAGE = w_msg
   }
-
-  LOSE_MESSAGE = 'You lose!'
-  WIN_MESSAGE = 'You win!'
-  DRAW_MESSAGE = 'Draw!'
 
   get dealer() {
     const n_players = this.players.length
@@ -154,9 +149,9 @@ export class BlackJack {
     return this.players[0]
   }
 
-  play() {
+  play(seed) {
     this.playing = true
-    this.deck.shuffle()
+    this.deck.shuffle(seed)
 
     while (this.playing) {
       for (let player of this.players) {
@@ -200,7 +195,6 @@ export class BlackJack {
     )
     switch (action) {
       case 'hit': {
-        // player.hand.add(this.deck.draw_card())
         this.deal_card_to(player)
         return true
       }
@@ -219,8 +213,8 @@ export class BlackJack {
     let points = player.hand.points_for()
 
     const blackjack = () => points === 21,
-      draw_card = () => points <= 15 && points >= 5,
-      draw_card_two = () => points <= 5 && points >= 15
+          draw_card = () => points <= 15 && points >= 5,
+          draw_card_two = () => points <= 5 && points >= 15
 
     // Dealer AI
     if (blackjack()) {
@@ -232,44 +226,43 @@ export class BlackJack {
       logger.info(`${Dealer_Move} drawn 2 cards!`)
       player.hand.add([this.deck.draw_card(), this.deck.draw_card()])
     }
+
     return false
   }
 
   show_hand(player) {
     logger.info(
-      `${player.name}'s hand is ${player.hand
-        .names()
-        .join(', ')}\n(${player.hand.points_for()} points)`
+      `${player.name}'s hand is ${player.card_names().join(', ')}\n(${player.points} points)`
     )
   }
 
   compare_hands() {
-    let best_score = 0
-    for (var i = 0; i < players.length; i++) {
-      this.players[i].points
-    }
+    //let best_score = 0
+    //for (var i = 0; i < players.length; i++) {
+    //  this.players[i].points
+    //}
 
-    let d_points = hands[0].points_for()
-    let p_points = hands[1].points_for()
+    let dealers_points = Players[0].points
+    let players_points = Players[1].points
 
-    const win = p_points > d_points || d_points > 21,
-      tie = p_points === d_points,
-      lose = p_points < d_points || p_points > 21
+    const win = players_points > dealers_points || dealers_points > 21
+    const tie = players_points === dealers_points
+    const lose = players_points < dealers_points || players_points > 21
 
     if (win) {
-      logger.info(WIN_MESSAGE)
+      logger.info(this.WIN_MESSAGE)
     } else if (tie) {
-      logger.info(DRAW_MESSAGE)
+      logger.info(this.DRAW_MESSAGE)
     } else if (lose) {
-      logger.info(LOSE_MESSAGE)
+      logger.info(this.LOSE_MESSAGE)
     }
   }
 }
 
 if (import.meta.main) {
-  // const { seed } = parse(Deno.args)
+  const { seed } = parse(Deno.args)
   const game = new BlackJack()
   game.add_player('Lily')
-  game.play()
+  game.play(seed)
   // play({ seed })
 }
