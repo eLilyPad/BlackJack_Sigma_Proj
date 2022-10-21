@@ -216,6 +216,12 @@ Deno.test('add(): adds card to hand', () => {
 // })
 
 // Player input
+Deno.test('BlackJack.input():test actions from players input', () => {
+  const game = new BlackJack()
+  const inputs = ['hit', 'stick']
+  assertEquals(game.input(action = inputs[0]), true)
+  assertEquals(game.input(action = inputs[1]), false)
+})
 
 // Dealer AI
 

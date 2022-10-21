@@ -88,22 +88,31 @@ export class CardHand {
   }
 
   get points() {
-    this.points_for()
+    if (this.cards.length > 0 && this.points === 0) {
+      return this.points_for()
+    }
+
+    return this._points
   }
+  set points(points) {
+    this._points = points
+  }
+
 
   points_for(cards = this.cards) {
     let points = 0
-    cards.forEach((v) => {
-      points += v.get_value()
+    cards.forEach((c) => {
+      points += c.get_value()
     })
     return points
   }
 
   names(cards = this.cards) {
-    return cards.map((v) => v.name)
+    return cards.map((c) => c.name)
   }
 
   add(cards) {
+    this.points += cards.map((c) => c.get_value)
     this.cards.push(cards)
   }
 }
@@ -115,12 +124,21 @@ export class Player {
     this.deck = deck
   }
 
-  get points() {
-    return this.hand.points_for()
-  }
+  get points() { return this.hand.points_for() }
 
-  get card_names() {
-    return this.hand.names()
+  get card_names() { return this.hand.names() }
+
+  get ranking() { return this._ranking }
+
+  set ranking(rank) {
+    const n_rank = parseInt(rank)
+    const is_valid = () => isNaN(n_rank) && n_rank > 0
+    
+    if (!is_valid()) {
+      alert(`Invalid ranking: ${rank} is not an Interger`)
+    }
+
+    this._ranking = n_rank
   }
 
   draw_cards(amount) {
@@ -189,8 +207,8 @@ export class BlackJack {
     return player.hand
   }
 
-  input(player) {
-    const action = window.prompt(
+  input(player, action) {
+    action = window.prompt(
       `${player.name}, What do you want to do? ("hit" or "stick")`
     )
     switch (action) {
